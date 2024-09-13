@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בור ועם הארץ בידיעת הארץ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e6f3ff;
+        }
+        .game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        input, button {
+            font-size: 18px;
+            margin: 10px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #3498db;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #letterDisplay {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .computer-letter { color: #e74c3c; }
+        .user-letter { color: #2ecc71; }
+        #message {
+            color: #2c3e50;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+        #score {
+            font-size: 24px;
+            margin-top: 20px;
+            color: #27ae60;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.5s ease-out;
+        }
+        #instructions {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>בור ועם הארץ בידיעת הארץ</h1>
+        <div id="instructions" style="display: none;">
+            <p>ברוכים הבאים למשחק להכרת יישובי ארצנו!</p>
+            <p>איך עובד המשחק? המחשב מציע אות ראשונה של אחד היישובים או הערים בארץ. אתם צריכים לתת את האות השנייה, המחשב ייתן את האות השלישית, וכן הלאה. ברגע שמסתיים שם יישוב - עוברים ישירות ליישוב חדש, ללא הודעה.</p>
+            <p>שימו לב: אין במשחק אותיות סופיות. אין לחזור על יישוב פעמיים. שמות המקומות מופיעים לפי הכתיב התקני שלהם. בהצלחה!</p>
+                    </div>
+        <div id="letterDisplay"></div>
+        <input type="text" id="userInput" maxlength="1" placeholder="הזן אות" style="display: none;">
+        <button id="sendBtn" onclick="checkLetter()" style="display: none;">שלח</button>
+        <button id="giveUpBtn" onclick="giveUp()" style="display: none;">ואללה לא יודע</button>
+        <button id="startGameBtn" onclick="startNewGame()">התחל משחק</button>
+        <div id="message"></div>
+        <div id="score">ניקוד: 0</div>
+    </div>
+
+
+    <script>
+let originalPlaces = [];
+let places = [];
+let currentWord = '';
+let currentIndex = 0;
+let isComputerTurn = true;
+let score = 0;
+let usedPlaces = new Set();
+let possibleWords = [];
+let gameInProgress = false;
+let usedPlacesInOrder = [];
+let isNewPlaceAllowed = false;
+
+// טען מקומות מסקריפט Google Apps כשהדף נטען
+fetch('https://script.google.com/macros/s/AKfycbypp7BqDPaKzxikT492CNqMQb0cVR6KO2nuWiXjzZrtV79reHL01z5Qm9ggN4qdO0hl0Q/exec')
+    .then(response => response.json())
+    .then(data => {
+        originalPlaces = data;
+        places = originalPlaces.map(place => preparePlaceForGame(place));
+        document.getElementById('instructions').style.display = 'block';
+        document.getElementById('startGameBtn').disabled = false;
+    })
+    .catch(error => {
+        console.error('שגיאה בטעינת מקומות:', error);
+        setMessage('אירעה שגיאה בטעינת המקומות. אנא רענן את הדף ונסה שוב.');
+    });
+
+function preparePlaceForGame(place) {
+    return place.replace(/[םןךףץ]/g, match => {
+        const replacements = {'ם': 'מ', 'ן': 'נ', 'ך': 'כ', 'ף': 'פ', 'ץ': 'צ'};
+        return replacements[match];
+    }).replace(/[-\s]/g, '');
+}
+
+function isHebrewLetter(letter) {
+    return /^[א-ת]$/.test(letter);
+}
+
+function sanitizeLetter(letter) {
+    if (isHebrewLetter(letter)) {
+        return letter;
+    }
+    // אם האות אינה עברית, החזר אות עברית אקראית
+    const hebrewLetters = 'אבגדהוזחטיכלמנסעפצקרשת';
+    return hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)];
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function startNewGame() {
+    score = 0;
+    usedPlaces.clear();
+    usedPlacesInOrder = [];
+    updateScore();
+    gameInProgress = true;
+    document.getElementById('startGameBtn').style.display = 'none';
+    document.getElementById('instructions').style.display = 'none';
+    document.getElementById('userInput').style.display = 'inline-block';
+    document.getElementById('sendBtn').style.display = 'inline-block';
+    document.getElementById('giveUpBtn').style.display = 'inline-block';
+    document.getElementById('letterDisplay').innerHTML = '';
+    setMessage('');
+    possibleWords = shuffleArray([...places]);
+    currentWord = '';
+    currentIndex = 0;
+    isNewPlaceAllowed = true; // מאפשר למחשב להתחיל מקום חדש
+    computerTurn(); // מתחיל את המשחק עם תור המחשב
+}
+function computerTurn() {
+    if (possibleWords.length === 0) {
+        endGame();
+        return;
+    }
+    
+    if (isNewPlaceAllowed || currentWord === '') {
+        // מתחיל מקום חדש
+        let randomPlace = possibleWords[Math.floor(Math.random() * possibleWords.length)];
+        currentWord = randomPlace[0];
+        possibleWords = places.filter(place => place.startsWith(currentWord) && !usedPlaces.has(place));
+        isNewPlaceAllowed = false;
+        currentIndex = 1;
+    } else {
+        possibleWords = possibleWords.filter(word => word.startsWith(currentWord));
+        if (possibleWords.length === 0) {
+            endGame();
+            return;
+        }
+        // בחירה אקראית של מילה מבין האפשרויות
+        let chosenWord = possibleWords[Math.floor(Math.random() * possibleWords.length)];
+        currentWord += chosenWord[currentIndex];
+        currentIndex++;
+    }
+    
+    let nextLetter = sanitizeLetter(currentWord[currentIndex - 1]);
+    animateLetter(nextLetter, true);
+    
+    // בדיקה אם המילה הנוכחית היא מקום שלם
+    if (places.includes(currentWord)) {
+        usedPlaces.add(currentWord);
+        usedPlacesInOrder.push(originalPlaces[places.indexOf(currentWord)]);
+        isNewPlaceAllowed = true;
+        currentWord = '';
+        currentIndex = 0;
+        possibleWords = shuffleArray(places.filter(place => !usedPlaces.has(place)));
+    } else if (possibleWords.length === 1 && currentIndex === possibleWords[0].length) {
+        // מקום הושלם
+        usedPlaces.add(possibleWords[0]);
+        usedPlacesInOrder.push(originalPlaces[places.indexOf(possibleWords[0])]);
+        isNewPlaceAllowed = true;
+        currentWord = '';
+        currentIndex = 0;
+        possibleWords = shuffleArray(places.filter(place => !usedPlaces.has(place)));
+    }
+    
+    isComputerTurn = false;
+}
+
+function checkLetter() {
+    if (!gameInProgress) return;
+    let userInput = document.getElementById('userInput').value.trim().toLowerCase();
+    userInput = sanitizeLetter(userInput);
+    
+    if (!isHebrewLetter(userInput)) {
+        setMessage('נא להזין אות עברית אחת בלבד');
+        return;
+    }
+
+    if (isComputerTurn) {
+        setMessage('תור המחשב, אנא המתן');
+        return;
+    }
+
+    let newPossibleWords;
+    if (isNewPlaceAllowed || currentWord === '') {
+        // המשתמש מתחיל מקום חדש
+        newPossibleWords = places.filter(place => place.startsWith(userInput) && !usedPlaces.has(place));
+        if (newPossibleWords.length === 0) {
+            setMessage(`אין מקומות חדשים שמתחילים באות ${userInput}. המשחק נגמר.`);
+            setTimeout(endGame, 2000);
+            return;
+        }
+        currentWord = userInput;
+        currentIndex = 1;
+        isNewPlaceAllowed = false;
+    } else {
+        newPossibleWords = possibleWords.filter(word => 
+            word.length > currentIndex && word[currentIndex].toLowerCase() === userInput.toLowerCase()
+        );
+        if (newPossibleWords.length === 0) {
+            setMessage(`טעות! האות ${userInput} אינה מתאימה. המשחק נגמר.`);
+            setTimeout(endGame, 2000);
+            return;
+        }
+        currentWord += userInput;
+        currentIndex++;
+    }
+
+    possibleWords = newPossibleWords;
+    animateLetter(userInput, false);
+    document.getElementById('userInput').value = '';
+    setMessage('');
+    score++;
+    updateScore();
+
+    // בדיקה אם המילה הנוכחית היא מקום שלם
+    if (places.includes(currentWord)) {
+        usedPlaces.add(currentWord);
+        usedPlacesInOrder.push(originalPlaces[places.indexOf(currentWord)]);
+        isNewPlaceAllowed = true;
+        currentWord = '';
+        currentIndex = 0;
+        possibleWords = shuffleArray(places.filter(place => !usedPlaces.has(place)));
+    } else if (possibleWords.length === 1 && currentIndex === possibleWords[0].length) {
+        // מקום הושלם
+        usedPlaces.add(possibleWords[0]);
+        usedPlacesInOrder.push(originalPlaces[places.indexOf(possibleWords[0])]);
+        isNewPlaceAllowed = true;
+        currentWord = '';
+        currentIndex = 0;
+        possibleWords = shuffleArray(places.filter(place => !usedPlaces.has(place)));
+    }
+
+    isComputerTurn = true;
+    setTimeout(computerTurn, 1000);
+}
+
+function animateLetter(letter, isComputer) {
+    letter = sanitizeLetter(letter);
+    const letterElement = document.createElement('span');
+    letterElement.textContent = letter;
+    letterElement.classList.add(isComputer ? 'computer-letter' : 'user-letter');
+    letterElement.classList.add('animate-pop');
+    
+    const displayElement = document.getElementById('letterDisplay');
+    displayElement.appendChild(letterElement);
+    
+    if (displayElement.children.length > 5) {
+        displayElement.removeChild(displayElement.children[0]);
+    }
+}
+
+function giveUp() {
+    if (!gameInProgress) return;
+    endGame();
+}
+
+function endGame() {
+    gameInProgress = false;
+    let message = `<h2>המשחק נגמר!</h2>`;
+    message += `<p>הניקוד הסופי שלך: <strong>${score}</strong></p>`;
+    
+    if (score > 50) {
+        message += `<p style="color: green; font-weight: bold;">כל הכבוד! אתה מכיר היטב את יישובי ארצנו!</p>`;
+    }
+    
+    message += `<p>רשימת המקומות במשחק:</p>`;
+    message += `<p>${usedPlacesInOrder.join(', ')}</p>`;
+    
+    if (possibleWords.length > 0) {
+        let lastPlace = originalPlaces[places.indexOf(possibleWords[0])];
+        message += `<p>המקום האחרון שלא הצלחת לנחש: <strong>${lastPlace}</strong></p>`;
+    } else {
+        message += `<p style="color: blue; font-weight: bold;">כל הכבוד! ניחשת את כל המקומות!</p>`;
+    }
+    
+    setMessage(message);
+    document.getElementById('startGameBtn').style.display = 'inline-block';
+    document.getElementById('userInput').style.display = 'none';
+    document.getElementById('sendBtn').style.display = 'none';
+    document.getElementById('giveUpBtn').style.display = 'none';
+}
+
+function setMessage(msg) {
+    document.getElementById('message').innerHTML = msg;
+}
+
+function updateScore() {
+    document.getElementById('score').textContent = `ניקוד: ${score}`;
+}
+
+// מאזיני אירועים
+document.getElementById('startGameBtn').addEventListener('click', startNewGame);
+document.getElementById('sendBtn').addEventListener('click', checkLetter);
+document.getElementById('giveUpBtn').addEventListener('click', giveUp);
+document.getElementById('userInput').addEventListener('keyup', function(event) {
+    if (event.key === 'Enter') {
+        checkLetter();
+    }
+});
+  </script>
+</body>
+</html>
