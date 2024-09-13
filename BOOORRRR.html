@@ -123,24 +123,37 @@
     </style>
 </head>
 <body>
+    <!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <!-- [שאר תוכן ה-head נשאר ללא שינוי] -->
+</head>
+<body>
     <div class="game-container">
         <h1>בור ועם הארץ בידיעת הארץ</h1>
         <div id="instructions" style="display: none;">
             <h2>ברוכים הבאים למשחק להכרת יישובי ארצנו! 🇮🇱</h2>
             <p><strong>איך עובד המשחק?</strong></p>
             <ul>
-                <li>המחשב מציע אות ראשונה של אחד היישובים או הערים בארץ.</li>
-                <li>אתם נותנים את האות השנייה, המחשב נותן את השלישית, וכך הלאה.</li>
-                <li>כשמסתיים שם יישוב - עוברים ישירות ליישוב חדש, ללא הודעה.</li>
+                <li>המחשב מציע אות ראשונה של אחד היישובים או הערים בארץ</li>
+                <li>אתם נותנים את האות השנייה, המחשב נותן את השלישית, וכך הלאה</li>
+                <li>כשמסתיים שם יישוב - עוברים ישירות ליישוב חדש, ללא הודעה</li>
             </ul>
             <p><strong>שימו לב:</strong></p>
             <ul>
                 <li>אין במשחק אותיות סופיות!</li>
-                <li>אין לחזור על יישוב פעמיים.</li>
-                <li>שמות המקומות מופיעים לפי הכתיב התקני שלהם.</li>
+                <li>אין לחזור על יישוב פעמיים</li>
+                <li>שמות המקומות מופיעים לפי הכתיב התקני שלהם</li>
+            </ul>
+            <p><strong>ניקוד:</strong></p>
+            <ul>
+                <li>20 נקודות ומעלה - תג סייר 🥉</li>
+                <li>40 נקודות ומעלה - תג סייר בכיר 🥈</li>
+                <li>80 נקודות ומעלה - תג יודעי הארץ 🏆</li>
             </ul>
             <p>אז אתם עמי הארץ או יודעי הארץ? בהצלחה! 🍀</p>
         </div>
+      
         <div id="letterDisplay"></div>
         <input type="text" id="userInput" maxlength="1" placeholder="הזן אות" style="display: none;">
         <button id="sendBtn" onclick="checkLetter()" style="display: none;">שלח</button>
