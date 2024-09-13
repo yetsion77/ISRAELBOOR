@@ -6,42 +6,51 @@
     <title>בור ועם הארץ בידיעת הארץ</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #e6f3ff;
+            padding: 20px;
         }
         .game-container {
             background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
             text-align: center;
-            max-width: 400px;
+            max-width: 500px;
             width: 100%;
         }
         h1 {
             color: #2c3e50;
             margin-bottom: 20px;
+            font-size: 28px;
         }
         input, button {
             font-size: 18px;
             margin: 10px;
-            padding: 10px 15px;
-            border-radius: 5px;
-            border: 1px solid #3498db;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 2px solid #3498db;
+            transition: all 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #2980b9;
+            box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
         }
         button {
             background-color: #3498db;
             color: white;
             cursor: pointer;
-            transition: background-color 0.3s;
+            font-weight: bold;
         }
         button:hover {
             background-color: #2980b9;
+            transform: translateY(-2px);
         }
         #letterDisplay {
             font-size: 72px;
@@ -56,13 +65,15 @@
         .user-letter { color: #2ecc71; }
         #message {
             color: #2c3e50;
-            margin-top: 10px;
+            margin-top: 20px;
             min-height: 20px;
+            line-height: 1.6;
         }
         #score {
             font-size: 24px;
             margin-top: 20px;
             color: #27ae60;
+            font-weight: bold;
         }
         @keyframes popIn {
             0% { transform: scale(0); opacity: 0; }
@@ -74,21 +85,62 @@
         }
         #instructions {
             background-color: #f0f8ff;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 20px;
+            border-radius: 8px;
             margin-bottom: 20px;
             text-align: right;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        #instructions h2 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        #instructions p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        #instructions ul {
+            padding-right: 20px;
+        }
+        #instructions li {
+            margin-bottom: 5px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 5px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .scout { background-color: #ffd700; color: #000; }
+        .senior-scout { background-color: #c0c0c0; color: #000; }
+        .expert { background-color: #cd7f32; color: #fff; }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>בור ועם הארץ בידיעת הארץ</h1>
         <div id="instructions" style="display: none;">
-            <p>ברוכים הבאים למשחק להכרת יישובי ארצנו!</p>
-            <p>איך עובד המשחק? המחשב מציע אות ראשונה של אחד היישובים או הערים בארץ. אתם צריכים לתת את האות השנייה, המחשב ייתן את האות השלישית, וכן הלאה. ברגע שמסתיים שם יישוב - עוברים ישירות ליישוב חדש, ללא הודעה.</p>
-            <p>שימו לב: אין במשחק אותיות סופיות! אין לחזור על יישוב פעמיים. שמות המקומות מופיעים לפי הכתיב התקני שלהם. אז אתם עמי הארץ או יודעי הארץ? בהצלחה!</p>
-                    </div>
+            <h2>ברוכים הבאים למשחק להכרת יישובי ארצנו! 🇮🇱</h2>
+            <p><strong>איך עובד המשחק?</strong></p>
+            <ul>
+                <li>המחשב מציע אות ראשונה של אחד היישובים או הערים בארץ.</li>
+                <li>אתם נותנים את האות השנייה, המחשב נותן את השלישית, וכך הלאה.</li>
+                <li>כשמסתיים שם יישוב - עוברים ישירות ליישוב חדש, ללא הודעה.</li>
+            </ul>
+            <p><strong>שימו לב:</strong></p>
+            <ul>
+                <li>אין במשחק אותיות סופיות!</li>
+                <li>אין לחזור על יישוב פעמיים.</li>
+                <li>שמות המקומות מופיעים לפי הכתיב התקני שלהם.</li>
+            </ul>
+            <p>אז אתם עמי הארץ או יודעי הארץ? בהצלחה! 🍀</p>
+        </div>
         <div id="letterDisplay"></div>
         <input type="text" id="userInput" maxlength="1" placeholder="הזן אות" style="display: none;">
         <button id="sendBtn" onclick="checkLetter()" style="display: none;">שלח</button>
@@ -312,30 +364,40 @@ function giveUp() {
 }
 
 function endGame() {
-    gameInProgress = false;
-    let message = `<h2>המשחק נגמר!</h2>`;
-    message += `<p>הניקוד הסופי שלך: <strong>${score}</strong></p>`;
-    
-    if (score > 50) {
-        message += `<p style="color: green; font-weight: bold;">כל הכבוד! אתה מכיר היטב את יישובי ארצנו!</p>`;
+        gameInProgress = false;
+        let message = `<h2>המשחק נגמר!</h2>`;
+        message += `<p>הניקוד הסופי שלך: <strong>${score}</strong></p>`;
+        
+        // הוספת תגים בהתאם לניקוד
+        if (score >= 80) {
+            message += `<p><span class="badge expert">תג יודעי הארץ 🏆</span></p>`;
+        } else if (score >= 40) {
+            message += `<p><span class="badge senior-scout">תג סייר בכיר 🥈</span></p>`;
+        } else if (score >= 20) {
+            message += `<p><span class="badge scout">תג סייר 🥉</span></p>`;
+        }
+        
+        if (score > 50) {
+            message += `<p style="color: green; font-weight: bold;">כל הכבוד! אתה מכיר היטב את יישובי ארצנו! 🎉</p>`;
+        }
+        
+        message += `<p>רשימת המקומות במשחק:</p>`;
+        message += `<p>${usedPlacesInOrder.join(', ')}</p>`;
+        
+        if (possibleWords.length > 0) {
+            let lastPlace = originalPlaces[places.indexOf(possibleWords[0])];
+            message += `<p>המקום האחרון שלא הצלחת לנחש: <strong>${lastPlace}</strong></p>`;
+        } else {
+            message += `<p style="color: blue; font-weight: bold;">כל הכבוד! ניחשת את כל המקומות! 🏅</p>`;
+        }
+        
+        setMessage(message);
+        document.getElementById('startGameBtn').style.display = 'inline-block';
+        document.getElementById('userInput').style.display = 'none';
+        document.getElementById('sendBtn').style.display = 'none';
+        document.getElementById('giveUpBtn').style.display = 'none';
     }
-    
-    message += `<p>רשימת המקומות במשחק:</p>`;
-    message += `<p>${usedPlacesInOrder.join(', ')}</p>`;
-    
-    if (possibleWords.length > 0) {
-        let lastPlace = originalPlaces[places.indexOf(possibleWords[0])];
-        message += `<p>המקום האחרון שלא הצלחת לנחש: <strong>${lastPlace}</strong></p>`;
-    } else {
-        message += `<p style="color: blue; font-weight: bold;">כל הכבוד! ניחשת את כל המקומות!</p>`;
-    }
-    
-    setMessage(message);
-    document.getElementById('startGameBtn').style.display = 'inline-block';
-    document.getElementById('userInput').style.display = 'none';
-    document.getElementById('sendBtn').style.display = 'none';
-    document.getElementById('giveUpBtn').style.display = 'none';
-}
+
 
 function setMessage(msg) {
     document.getElementById('message').innerHTML = msg;
